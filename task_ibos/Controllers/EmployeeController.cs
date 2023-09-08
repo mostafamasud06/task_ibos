@@ -18,7 +18,7 @@ namespace task_ibos.Controllers
             _context = dbContext;
         }
 
-
+        //API01# Update an employee’s Employee Name and Code [Don't allow duplicate employee code]
         [HttpPost("{id}/update-code")]
         public IActionResult UpdateEmployeeCode(int id, [FromBody] string employeeCode)
         {
@@ -37,12 +37,13 @@ namespace task_ibos.Controllers
                     throw new Exception("Employee code already exists.");
                 }
 
-                else {
+                else
+                {
                     employee.EmployeeCode = employeeCode;
                     _context.SaveChanges();
                     return Content("Updated successfully");
                 }
-                
+
             }
             catch (Exception ex)
             {
@@ -51,25 +52,23 @@ namespace task_ibos.Controllers
         }
 
 
-        
-
-
-
-        // GET api/employees/absent
-        [HttpGet("absent")]
-        public ActionResult<IEnumerable<Employee>> GetAbsentEmployees()
+        //API02: Get employee who has 3rd highest salary
+        // GET api/employees/third-highest-salary
+        [HttpGet("third-highest-salary")]
+        public ActionResult<Employee> GetEmployeeWithThirdHighestSalary()
         {
             try
             {
-                var employeeIds = _context.EmployeeAttendances
-                    .Where(a => a.IsAbsent)
-                    .Select(a => a.EmployeeId)
-                    .Distinct()
-                    .ToList();
-
+                // Order employees by salary in descending order and skip the first two employees
                 var employees = _context.Employees
-                    .Where(e => employeeIds.Contains(e.EmployeeId))
-                    .ToList();
+                    .OrderByDescending(e => e.EmployeeSalary)
+                    .Skip(2) // Skip the first two employees to get the third highest
+                    .FirstOrDefault();
+
+                if (employees == null)
+                {
+                    return NotFound("No employee found.");
+                }
 
                 return Ok(employees);
             }
@@ -79,10 +78,24 @@ namespace task_ibos.Controllers
             }
         }
 
+        //API03# Get all employee based on maximum to minimum salary who has not any absent record
+        // GET api/employees/sorted-by-salary
+        [HttpGet("sorted-by-salary")]
+        public ActionResult<IEnumerable<Employee>> GetEmployeesSortedBySalary()
+        {
+            try
+            {
+                var employees = _context.Employees.OrderByDescending(e => e.EmployeeSalary).ToList();
+                return Ok(employees);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
 
 
-
-    
+        //API04# Get monthly attendance report of all employee
         // GET api/employees/attendance-report/{year}/{month}
         [HttpGet("attendance-report/{year}/{month}")]
         public ActionResult<IEnumerable<object>> GetMonthlyAttendanceReport(int year, int month)
@@ -119,6 +132,40 @@ namespace task_ibos.Controllers
             {
                 var employees = _context.Employees.ToList();
                 return Ok(employees);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        // API05# Get a hierarchy from an employee based on his supervisor
+        [HttpGet("hierarchy/{employeeId}")]
+        public ActionResult<IEnumerable<string>> GetEmployeeHierarchy(int employeeId)
+        {
+            try
+            {
+                var hierarchy = new List<string>();
+                var employee = _context.Employees.Find(employeeId);
+
+                if (employee == null)
+                {
+                    return NotFound("Employee not found.");
+                }
+
+                // Add the current employee's name to the hierarchy
+                hierarchy.Add(employee.EmployeeName);
+
+                // Recursive function to traverse the hierarchy
+                void AddSupervisors(Employee currentEmployee)
+                {
+                    if (currentEmployee.supervisorID != null) ;
+                }
+
+                // Start adding supervisors
+                AddSupervisors(employee);
+
+                return Ok(hierarchy);
             }
             catch (Exception ex)
             {
